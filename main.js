@@ -9,11 +9,16 @@ function activate(context) {
     vscode.commands.registerCommand("jazz.line", insertLine),
     vscode.commands.registerCommand("jazz.para", insertPara),
     vscode.commands.registerCommand("jazz.multiplePara", insertMultiPara),
+    vscode.commands.registerCommand("jazz.snippet", insertSnippet) // New command(ADDED CHANGES)
   ];
+
   // Register all commands
   commands.forEach(function (command) {
     context.subscriptions.push(command);
   });
+
+  // Register an event listener for document save
+  vscode.workspace.onDidSaveTextDocument(detectAndReplacePrefixes); // New event listener(ADDED CHANGES)
 }
 
 function insertText(value, totalParas) {
@@ -64,6 +69,41 @@ async function insertMultiPara() {
   });
 
   insertText("multiPara", totalParas);
+}
+
+function insertSnippet() {
+  detectAndReplacePrefixes(vscode.window.activeTextEditor.document);
+}
+
+function detectAndReplacePrefixes(document) {
+  var editor = vscode.window.activeTextEditor;
+  var text = document.getText();
+
+  editor.edit((editBuilder) => {
+    var regexLine = /!jazzline/g;
+    var regexPara = /!jazzpara/g;
+    var match;
+
+    // Replace all !jazzline with a random line
+    while ((match = regexLine.exec(text)) !== null) {
+      let randomLine = scriptLine[Math.floor(Math.random() * scriptLine.length)];
+      let range = new vscode.Range(
+        document.positionAt(match.index),
+        document.positionAt(match.index + match[0].length)
+      );
+      editBuilder.replace(range, randomLine);
+    }
+
+    // Replace all !jazzpara with a random paragraph
+    while ((match = regexPara.exec(text)) !== null) {
+      let randomPara = scriptPara[Math.floor(Math.random() * scriptPara.length)];
+      let range = new vscode.Range(
+        document.positionAt(match.index),
+        document.positionAt(match.index + match[0].length)
+      );
+      editBuilder.replace(range, randomPara);
+    }
+  });
 }
 
 exports.activate = activate;
